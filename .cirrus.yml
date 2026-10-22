@@ -1,0 +1,30 @@
+build_ipa_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-runner:sonoma
+
+  timeout_in: 45m
+
+  install_xcodegen_script: brew install xcodegen
+  generate_script: xcodegen generate
+
+  build_script: |
+    set -o pipefail
+    xcodebuild \
+      -project Locus.xcodeproj \
+      -scheme Locus \
+      -configuration Release \
+      -sdk iphoneos \
+      -derivedDataPath build \
+      CODE_SIGNING_ALLOWED=NO \
+      CODE_SIGNING_REQUIRED=NO \
+      CODE_SIGN_IDENTITY="" \
+      build
+
+  package_script: |
+    mkdir -p Payload
+    cp -R "build/Build/Products/Release-iphoneos/Locus.app" Payload/
+    zip -qry Locus-patched.ipa Payload
+
+  ipa_artifacts:
+    path: "Locus-patched.ipa"
+    type: application/octet-stream
